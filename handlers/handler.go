@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	propservice "github.com/theweird-kid/property-list/services/prop_service"
+	"github.com/theweird-kid/property-list/services/prop_service"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -21,7 +21,7 @@ func (api *API) Hello(ctx *gin.Context) {
 }
 
 func (api *API) GetProperties(ctx *gin.Context) {
-	properties, err := propservice.GetAllProperties(ctx, api.MongoDB)
+	properties, err := prop_service.GetAllProperties(ctx, api.MongoDB)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return

@@ -1,4 +1,4 @@
-package propservice
+package prop_service
 
 import (
 	"context"

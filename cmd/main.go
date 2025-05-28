@@ -48,6 +48,8 @@ func main() {
 
 	r.GET("/", api.Hello)
 	r.GET("/properties", api.GetProperties)
+	r.GET("/users", api.GetUsers)
+	r.POST("/register", api.RegisterUser)
 
 	// Example: pass api to handlers as needed
 	// r.GET("/properties", api.GetProperties)
