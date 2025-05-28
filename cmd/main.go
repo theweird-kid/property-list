@@ -37,9 +37,17 @@ func main() {
 		RedisClient: cache.RedisClient,
 	}
 
+	// err = LoadData(api.MongoDB)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// } else if err == nil {
+	// 	log.Println("Data Loaded Successfully")
+	// }
+
 	r := gin.New()
 
 	r.GET("/", api.Hello)
+	r.GET("/properties", api.GetProperties)
 
 	// Example: pass api to handlers as needed
 	// r.GET("/properties", api.GetProperties)
