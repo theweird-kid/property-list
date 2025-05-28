@@ -3,6 +3,7 @@ package user_service
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/theweird-kid/property-list/models"
 	"github.com/theweird-kid/property-list/services/auth"
@@ -50,4 +51,23 @@ func RegisterUser(user models.User, db *mongo.Database) error {
 	}
 
 	return fmt.Errorf("user already exists with email %s", existringUser.Email)
+}
+
+func LoginUser(user *models.User, db *mongo.Database) (string, error) {
+	userCollection := db.Collection("users")
+	// check if user exists
+	var existingUser models.User
+	err := userCollection.FindOne(context.Background(), bson.M{"email": user.Email}).Decode(&existingUser)
+	if err == mongo.ErrNoDocuments {
+		log.Println(err)
+		return "", fmt.Errorf("invalid")
+	}
+
+	err = auth.CheckPassword(existingUser.Password, user.Password)
+	if err != nil {
+		log.Println("meow", err)
+		return "", fmt.Errorf("invalid")
+	}
+
+	return auth.CreateToken(user.Email)
 }

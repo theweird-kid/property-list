@@ -50,6 +50,7 @@ func main() {
 	r.GET("/properties", api.GetProperties)
 	r.GET("/users", api.GetUsers)
 	r.POST("/register", api.RegisterUser)
+	r.POST("/login", api.LoginUser)
 
 	// Example: pass api to handlers as needed
 	// r.GET("/properties", api.GetProperties)
