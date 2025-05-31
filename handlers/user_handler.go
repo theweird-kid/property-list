@@ -25,7 +25,7 @@ func (api *API) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	err := user_service.RegisterUser(user, api.MongoDB)
+	err := user_service.RegisterUser(ctx, user, api.MongoDB)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
@@ -46,7 +46,7 @@ func (api *API) LoginUser(ctx *gin.Context) {
 		return
 	}
 
-	token, err := user_service.LoginUser(&user, api.MongoDB)
+	token, err := user_service.LoginUser(ctx, &user, api.MongoDB)
 	if err != nil && err.Error() == "invalid" {
 		ctx.JSON(http.StatusNotFound, "user with credentials doesn't exist")
 		return

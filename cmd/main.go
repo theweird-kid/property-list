@@ -40,20 +40,12 @@ func main() {
 	// err = LoadData(api.MongoDB)
 	// if err != nil {
 	// 	log.Fatal(err)
-	// } else if err == nil {
+	// } else {
 	// 	log.Println("Data Loaded Successfully")
 	// }
 
-	r := gin.New()
-
-	r.GET("/", api.Hello)
-	r.GET("/properties", api.GetProperties)
-	r.GET("/users", api.GetUsers)
-	r.POST("/register", api.RegisterUser)
-	r.POST("/login", api.LoginUser)
-
-	// Example: pass api to handlers as needed
-	// r.GET("/properties", api.GetProperties)
+	r := gin.Default()
+	setupRoutes(r, api)
 
 	r.Run("0.0.0.0:8080")
 }

@@ -1,9 +1,7 @@
 package cache
 
 import (
-	"context"
 	"os"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -11,19 +9,11 @@ import (
 var RedisClient *redis.Client
 
 func ConnectRedis() error {
-	redisAddr := os.Getenv("REDIS_ADDR")
-	redisPassword := os.Getenv("REDIS_PASSWORD")
-	redisDB := 0 // default DB
-
-	RedisClient = redis.NewClient(&redis.Options{
-		Addr:     redisAddr,
-		Password: redisPassword,
-		DB:       redisDB,
-	})
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	_, err := RedisClient.Ping(ctx).Result()
-	return err
+	redisURL := os.Getenv("REDIS_URL")
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		return err
+	}
+	RedisClient = redis.NewClient(opt)
+	return nil
 }
