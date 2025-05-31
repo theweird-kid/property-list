@@ -2,6 +2,7 @@ package prop_service
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/theweird-kid/property-list/models"
@@ -62,5 +63,44 @@ func GetPropertiesByUser(ctx *gin.Context, userEmail string, db *mongo.Database)
 		return nil, err
 	}
 
+	return properties, nil
+}
+
+func GetPropertiesByAttributes(ctx *gin.Context, db *mongo.Database) ([]models.Property, error) {
+	filters := bson.M{}
+
+	if title := ctx.Query("title"); title != "" {
+		filters["title"] = bson.M{"$regex": title}
+	}
+	if prop_type := ctx.Query("type"); prop_type != "" {
+		filters["type"] = bson.M{"$regex": prop_type}
+	}
+	if city := ctx.Query("city"); city != "" {
+		filters["city"] = bson.M{"$regex": city}
+	}
+
+	propertyCollection := db.Collection("properties")
+	cursor, err := propertyCollection.Find(ctx, filters)
+	if err != nil {
+		log.Println("line 85", err)
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var properties []models.Property
+	for cursor.Next(ctx) {
+		var prop models.Property
+		if err := cursor.Decode(&prop); err != nil {
+			log.Println("line 94", err)
+			return nil, err
+		}
+
+		properties = append(properties, prop)
+	}
+
+	if err := cursor.Err(); err != nil {
+		log.Println("line 102", err)
+		return nil, err
+	}
 	return properties, nil
 }

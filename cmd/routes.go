@@ -8,7 +8,9 @@ import (
 
 func setupRoutes(r *gin.Engine, api *handlers.API) {
 	r.GET("/", api.Hello)
+
 	r.GET("/properties", api.GetProperties)
+	r.GET("/prop-search", api.GetPropertiesByAttributes)
 	r.GET("/users", api.GetUsers)
 	r.POST("/register", api.RegisterUser)
 	r.POST("/login", api.LoginUser)
@@ -17,5 +19,10 @@ func setupRoutes(r *gin.Engine, api *handlers.API) {
 	protectedRoutes.Use(auth.AuthMiddleware())
 	{
 		protectedRoutes.GET("/my-props", api.GetUserProperties)
+		protectedRoutes.POST("/add-prop", api.NewProperty)
+		protectedRoutes.PATCH("/update-prop", api.UpdateProperty)
+
+		protectedRoutes.GET("/my-rec", api.GetRecommendations)
+		protectedRoutes.GET("/rec-prop", api.RecommendProperty)
 	}
 }

@@ -27,3 +27,23 @@ func (api *API) GetUserProperties(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, properties)
 }
+
+func (api *API) GetPropertiesByAttributes(ctx *gin.Context) {
+	results, err := prop_service.GetPropertiesByAttributes(ctx, api.MongoDB)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "unable to find properties",
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, results)
+}
+
+func (api *API) NewProperty(ctx *gin.Context) {
+
+}
+
+func (api *API) UpdateProperty(ctx *gin.Context) {
+
+}
