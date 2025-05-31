@@ -1,19 +1,31 @@
 package user_service
 
 import (
-	"context"
 	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/theweird-kid/property-list/models"
 	"github.com/theweird-kid/property-list/services/auth"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetUsers(ctx context.Context, db *mongo.Database) ([]models.User, error) {
-	usersCollection := db.Collection("users")
+type UserService struct {
+	DB          *mongo.Database
+	RedisClient *redis.Client
+}
+
+func NewUserService(db *mongo.Database, redis *redis.Client) *UserService {
+	return &UserService{
+		DB:          db,
+		RedisClient: redis,
+	}
+}
+
+func (us *UserService) GetUsers(ctx *gin.Context) ([]models.User, error) {
+	usersCollection := us.DB.Collection("users")
 	cursor, err := usersCollection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
@@ -34,11 +46,11 @@ func GetUsers(ctx context.Context, db *mongo.Database) ([]models.User, error) {
 	return users, nil
 }
 
-func RegisterUser(ctx *gin.Context, user models.User, db *mongo.Database) error {
+func (us *UserService) RegisterUser(ctx *gin.Context, user models.User) error {
 	hashedPass, _ := auth.HashPassword(user.Password)
 	user.Password = string(hashedPass)
 
-	userCollection := db.Collection("users")
+	userCollection := us.DB.Collection("users")
 	// check if already exists
 	var existringUser models.User
 	err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existringUser)
@@ -55,8 +67,8 @@ func RegisterUser(ctx *gin.Context, user models.User, db *mongo.Database) error 
 	return fmt.Errorf("user already exists with email %s", existringUser.Email)
 }
 
-func LoginUser(ctx *gin.Context, user *models.User, db *mongo.Database) (string, error) {
-	userCollection := db.Collection("users")
+func (us *UserService) LoginUser(ctx *gin.Context, user *models.User) (string, error) {
+	userCollection := us.DB.Collection("users")
 	// check if user exists
 	var existingUser models.User
 	err := userCollection.FindOne(ctx, bson.M{"email": user.Email}).Decode(&existingUser)

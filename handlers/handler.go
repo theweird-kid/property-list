@@ -4,14 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"github.com/theweird-kid/property-list/services/prop_service"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/theweird-kid/property-list/services/user_service"
 )
 
 type API struct {
-	MongoDB     *mongo.Database
-	RedisClient *redis.Client
+	PropertyService *prop_service.PropertyService
+	UserService     *user_service.UserService
 }
 
 func (api *API) Hello(ctx *gin.Context) {
@@ -21,7 +20,7 @@ func (api *API) Hello(ctx *gin.Context) {
 }
 
 func (api *API) GetProperties(ctx *gin.Context) {
-	properties, err := prop_service.GetAllProperties(ctx, api.MongoDB)
+	properties, err := api.PropertyService.GetAllProperties(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return

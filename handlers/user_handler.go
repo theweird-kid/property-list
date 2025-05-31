@@ -5,11 +5,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/theweird-kid/property-list/models"
-	"github.com/theweird-kid/property-list/services/user_service"
 )
 
 func (api *API) GetUsers(ctx *gin.Context) {
-	users, err := user_service.GetUsers(ctx, api.MongoDB)
+	users, err := api.UserService.GetUsers(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
@@ -25,7 +24,7 @@ func (api *API) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	err := user_service.RegisterUser(ctx, user, api.MongoDB)
+	err := api.UserService.RegisterUser(ctx, user)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err.Error())
 		return
@@ -46,7 +45,7 @@ func (api *API) LoginUser(ctx *gin.Context) {
 		return
 	}
 
-	token, err := user_service.LoginUser(ctx, &user, api.MongoDB)
+	token, err := api.UserService.LoginUser(ctx, &user)
 	if err != nil && err.Error() == "invalid" {
 		ctx.JSON(http.StatusNotFound, "user with credentials doesn't exist")
 		return

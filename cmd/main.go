@@ -9,6 +9,8 @@ import (
 	"github.com/theweird-kid/property-list/handlers"
 	"github.com/theweird-kid/property-list/services/cache"
 	"github.com/theweird-kid/property-list/services/database"
+	"github.com/theweird-kid/property-list/services/prop_service"
+	"github.com/theweird-kid/property-list/services/user_service"
 )
 
 func main() {
@@ -32,9 +34,11 @@ func main() {
 		panic("Failed to connect to Redis: " + err.Error())
 	}
 
+	propertyService := prop_service.NewPropertyService(database.MongoDB, cache.RedisClient)
+	userService := user_service.NewUserService(database.MongoDB, cache.RedisClient)
 	api := &handlers.API{
-		MongoDB:     database.MongoDB,
-		RedisClient: cache.RedisClient,
+		PropertyService: propertyService,
+		UserService:     userService,
 	}
 
 	// err = LoadData(api.MongoDB)

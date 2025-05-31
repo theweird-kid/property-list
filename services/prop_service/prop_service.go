@@ -6,13 +6,26 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/theweird-kid/property-list/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetAllProperties(ctx *gin.Context, db *mongo.Database) ([]models.Property, error) {
-	collection := db.Collection("properties")
+type PropertyService struct {
+	DB          *mongo.Database
+	RedisClient *redis.Client
+}
+
+func NewPropertyService(db *mongo.Database, redis *redis.Client) *PropertyService {
+	return &PropertyService{
+		DB:          db,
+		RedisClient: redis,
+	}
+}
+
+func (ps *PropertyService) GetAllProperties(ctx *gin.Context) ([]models.Property, error) {
+	collection := ps.DB.Collection("properties")
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
@@ -33,15 +46,15 @@ func GetAllProperties(ctx *gin.Context, db *mongo.Database) ([]models.Property, 
 	return properties, nil
 }
 
-func GetPropertiesByUser(ctx *gin.Context, userEmail string, db *mongo.Database) ([]models.Property, error) {
-	userCollection := db.Collection("users")
+func (ps *PropertyService) GetPropertiesByUser(ctx *gin.Context, userEmail string) ([]models.Property, error) {
+	userCollection := ps.DB.Collection("users")
 	var user models.User
 	err := userCollection.FindOne(ctx, bson.M{"email": userEmail}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
 
-	propertyCollection := db.Collection("properties")
+	propertyCollection := ps.DB.Collection("properties")
 	cursor, err := propertyCollection.Find(ctx, bson.M{"createdBy": user.ID})
 	if err != nil {
 		return nil, err
@@ -67,7 +80,7 @@ func GetPropertiesByUser(ctx *gin.Context, userEmail string, db *mongo.Database)
 	return properties, nil
 }
 
-func GetPropertiesByAttributes(ctx *gin.Context, db *mongo.Database) ([]models.Property, error) {
+func (ps *PropertyService) GetPropertiesByAttributes(ctx *gin.Context) ([]models.Property, error) {
 	filters := bson.M{}
 
 	if title := ctx.Query("title"); title != "" {
@@ -133,13 +146,10 @@ func GetPropertiesByAttributes(ctx *gin.Context, db *mongo.Database) ([]models.P
 		// Amenities and Tags are pipe-separated in the CSV, so they are represented as slices of strings.
 		Amenities     []string  `json:"amenities" bson:"amenities"`
 
-
 		Tags          []string  `json:"tags" bson:"
-		IsVerified    bool      `json:"isVerified" bson:"isVerified"`
-
 	*/
 
-	propertyCollection := db.Collection("properties")
+	propertyCollection := ps.DB.Collection("properties")
 	cursor, err := propertyCollection.Find(ctx, filters)
 	if err != nil {
 		return nil, err

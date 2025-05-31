@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/theweird-kid/property-list/services/prop_service"
 )
 
 func (api *API) GetUserProperties(ctx *gin.Context) {
@@ -17,7 +16,7 @@ func (api *API) GetUserProperties(ctx *gin.Context) {
 		return
 	}
 
-	properties, err := prop_service.GetPropertiesByUser(ctx, userEmail, api.MongoDB)
+	properties, err := api.PropertyService.GetPropertiesByUser(ctx, userEmail)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": "internal problem",
@@ -29,7 +28,7 @@ func (api *API) GetUserProperties(ctx *gin.Context) {
 }
 
 func (api *API) GetPropertiesByAttributes(ctx *gin.Context) {
-	results, err := prop_service.GetPropertiesByAttributes(ctx, api.MongoDB)
+	results, err := api.PropertyService.GetPropertiesByAttributes(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": "unable to find properties",
