@@ -5,12 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/theweird-kid/property-list/services/prop_service"
+	"github.com/theweird-kid/property-list/services/recommend_service"
 	"github.com/theweird-kid/property-list/services/user_service"
 )
 
 type API struct {
-	PropertyService *prop_service.PropertyService
-	UserService     *user_service.UserService
+	PropertyService       *prop_service.PropertyService
+	UserService           *user_service.UserService
+	RecommendationService *recommend_service.RecommendationService
 }
 
 func (api *API) Hello(ctx *gin.Context) {

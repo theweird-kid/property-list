@@ -31,17 +31,3 @@ type Property struct {
 	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt" bson:"updatedAt"`
 }
-
-type Favorite struct {
-	UserID      string    `json:"userId" bson:"userId"`
-	PropertyID  string    `json:"propertyId" bson:"propertyId"`
-	FavoritedAt time.Time `json:"favoritedAt" bson:"favoritedAt"`
-}
-
-// Recommendation represents a property recommended by one user to another.
-type Recommendation struct {
-	RecommendingUserID  string    `json:"recommendingUserId" bson:"recommendingUserId"`
-	RecommendedToUserID string    `json:"recommendedToUserId" bson:"recommendedToUserId"`
-	PropertyID          string    `json:"propertyId" bson:"propertyId"`
-	RecommendedAt       time.Time `json:"recommendedAt" bson:"recommendedAt"`
-}
