@@ -1,6 +1,9 @@
 package prop_service
 
 import (
+	"fmt"
+	"log"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -9,6 +12,7 @@ import (
 	"github.com/theweird-kid/property-list/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type PropertyService struct {
@@ -167,4 +171,165 @@ func (ps *PropertyService) GetPropertiesByAttributes(ctx *gin.Context) ([]models
 		return nil, err
 	}
 	return properties, nil
+}
+
+func (ps *PropertyService) NewProperty(ctx *gin.Context) error {
+	var prop models.Property
+	if err := ctx.ShouldBindJSON(&prop); err != nil {
+		return err
+	}
+
+	userCollection := ps.DB.Collection("users")
+
+	email := ctx.Keys["email"]
+	var user models.User
+	if err := userCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
+		return err
+	}
+	prop.CreatedBy = user.ID
+	propId, _ := ps.getNextPropertyID(ctx)
+	prop.ID = propId
+
+	propertyCollection := ps.DB.Collection("properties")
+	_, err := propertyCollection.InsertOne(ctx, prop)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ps *PropertyService) UpdateProperty(ctx *gin.Context) (models.Property, error) {
+	email := ctx.Keys["email"]
+	userCollection := ps.DB.Collection("users")
+	propertyCollection := ps.DB.Collection("properties")
+
+	var user models.User
+	if err := userCollection.FindOne(ctx, bson.M{"email": email}).Decode(&user); err != nil {
+		return models.Property{}, err
+	}
+
+	var propertyReq models.Property
+	if err := ctx.ShouldBindJSON(&propertyReq); err != nil {
+		return models.Property{}, err
+	}
+
+	var existingProperty models.Property
+	if err := propertyCollection.FindOne(ctx, bson.M{"_id": propertyReq.ID}).Decode(&existingProperty); err != nil {
+		return models.Property{}, err
+	}
+
+	if existingProperty.CreatedBy != user.ID {
+		return models.Property{}, fmt.Errorf("not authroized")
+	}
+
+	update := buildPropertyUpdateMap(&propertyReq)
+	if len(update) == 0 {
+		return existingProperty, nil // Nothing to update
+	}
+	_, err := propertyCollection.UpdateByID(ctx, existingProperty.ID, bson.M{"$set": update})
+	if err != nil {
+		log.Println("here", err)
+		return models.Property{}, err
+	}
+
+	if err := propertyCollection.FindOne(ctx, bson.M{"_id": propertyReq.ID}).Decode(&propertyReq); err != nil {
+		return models.Property{}, err
+	}
+	return propertyReq, nil
+}
+
+func buildPropertyUpdateMap(req *models.Property) bson.M {
+	update := bson.M{}
+
+	if req.Title != "" {
+		update["title"] = req.Title
+	}
+	if req.Type != "" {
+		update["type"] = req.Type
+	}
+	if req.Price != 0 {
+		update["price"] = req.Price
+	}
+	if req.State != "" {
+		update["state"] = req.State
+	}
+	if req.City != "" {
+		update["city"] = req.City
+	}
+	if req.AreaSqFt != 0 {
+		update["areaSqFt"] = req.AreaSqFt
+	}
+	if req.Bedrooms != 0 {
+		update["bedrooms"] = req.Bedrooms
+	}
+	if req.Bathrooms != 0 {
+		update["bathrooms"] = req.Bathrooms
+	}
+	if req.Amenities != nil {
+		update["amenities"] = req.Amenities
+	}
+	if req.Furnished != "" {
+		update["furnished"] = req.Furnished
+	}
+	if !req.AvailableFrom.IsZero() {
+		update["availableFrom"] = req.AvailableFrom
+	}
+	if req.ListedBy != "" {
+		update["listedBy"] = req.ListedBy
+	}
+	if req.Tags != nil {
+		update["tags"] = req.Tags
+	}
+	if req.ColorTheme != "" {
+		update["colorTheme"] = req.ColorTheme
+	}
+	if req.Rating != 0 {
+		update["rating"] = req.Rating
+	}
+	// Only update IsVerified if the request explicitly sets it to true
+	if req.IsVerified {
+		update["isVerified"] = req.IsVerified
+	}
+	if req.ListingType != "" {
+		update["listingType"] = req.ListingType
+	}
+	// Add more fields as needed
+
+	update["updatedAt"] = time.Now()
+	return update
+}
+
+func (ps *PropertyService) getNextPropertyID(ctx *gin.Context) (string, error) {
+	propertyCollection := ps.DB.Collection("properties")
+
+	// Only fetch the PropertyID field
+	opts := options.Find().SetProjection(bson.M{"_id": 1})
+	cursor, err := propertyCollection.Find(ctx, bson.M{}, opts)
+	if err != nil {
+		return "", err
+	}
+	defer cursor.Close(ctx)
+
+	maxID := 0
+	re := regexp.MustCompile(`PROP(\d{4})`)
+
+	for cursor.Next(ctx) {
+		var result struct {
+			PropertyID string `bson:"_id"`
+		}
+		if err := cursor.Decode(&result); err != nil {
+			continue
+		}
+		matches := re.FindStringSubmatch(result.PropertyID)
+		if len(matches) == 2 {
+			num, err := strconv.Atoi(matches[1])
+			if err == nil && num > maxID {
+				maxID = num
+			}
+		}
+	}
+
+	nextID := fmt.Sprintf("PROP%04d", maxID+1)
+	return nextID, nil
 }
