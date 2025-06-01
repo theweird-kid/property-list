@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		fmt.Println("No .env file found or error loading .env")
 	}
-
+	gin.SetMode(gin.ReleaseMode)
 	fmt.Println("Property Listing system!!")
 
 	// Connect to MongoDB
