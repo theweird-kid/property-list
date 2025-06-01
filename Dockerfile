@@ -13,8 +13,6 @@ ENV CGO_ENABLED=0
 
 RUN go build -o property-list ./cmd
 
-COPY .env .
-
 EXPOSE 8080
 
 CMD ["./property-list"]
