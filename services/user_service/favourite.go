@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/theweird-kid/property-list/models"
+	"github.com/theweird-kid/property-list/services/cache"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -20,6 +21,18 @@ func (us *UserService) GetFavourites(ctx *gin.Context) ([]models.Property, error
 		return nil, err
 	}
 
+	var properties []models.Property
+
+	cacheKey := "userfav:" + user.ID
+	found, err := cache.GetCache(ctx, us.RedisClient, cacheKey, &properties)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		log.Println("cache hit for:", cacheKey)
+		return properties, nil
+	}
+
 	favouriteCollection := us.DB.Collection("favourites")
 	cursor, err := favouriteCollection.Find(ctx, bson.M{"userId": user.ID})
 	if err != nil {
@@ -27,9 +40,7 @@ func (us *UserService) GetFavourites(ctx *gin.Context) ([]models.Property, error
 	}
 	defer cursor.Close(ctx)
 
-	var properties []models.Property
 	propertyCollection := us.DB.Collection("properties")
-
 	for cursor.Next(ctx) {
 
 		var fav models.Favorite
@@ -45,12 +56,11 @@ func (us *UserService) GetFavourites(ctx *gin.Context) ([]models.Property, error
 		properties = append(properties, prop)
 	}
 
-	log.Println("here")
-
 	if cursor.Err() != nil {
 		return nil, err
 	}
 
+	cache.SetCache(ctx, us.RedisClient, cacheKey, properties)
 	return properties, nil
 }
 
@@ -101,5 +111,7 @@ func (us *UserService) FavouriteProperty(ctx *gin.Context) error {
 		}
 	}
 
+	cacheKey := "userfav:" + user.ID
+	cache.DeleteCache(ctx, us.RedisClient, cacheKey)
 	return nil
 }

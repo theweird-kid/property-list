@@ -3,13 +3,17 @@ package prop_service
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"github.com/theweird-kid/property-list/models"
+	"github.com/theweird-kid/property-list/services/cache"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -57,6 +61,19 @@ func (ps *PropertyService) GetPropertiesByUser(ctx *gin.Context, userEmail strin
 		return nil, err
 	}
 
+	var properties []models.Property
+
+	// check Cache
+	cacheKey := "userprop:" + user.ID
+	found, err := cache.GetCache(ctx, ps.RedisClient, cacheKey, &properties)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		log.Println("cache hit for:", cacheKey)
+		return properties, nil
+	}
+
 	propertyCollection := ps.DB.Collection("properties")
 	cursor, err := propertyCollection.Find(ctx, bson.M{"createdBy": user.ID})
 	if err != nil {
@@ -64,7 +81,6 @@ func (ps *PropertyService) GetPropertiesByUser(ctx *gin.Context, userEmail strin
 	}
 	defer cursor.Close(ctx)
 
-	var properties []models.Property
 	for cursor.Next(ctx) {
 		var prop models.Property
 		if err := cursor.Decode(&prop); err != nil {
@@ -78,6 +94,7 @@ func (ps *PropertyService) GetPropertiesByUser(ctx *gin.Context, userEmail strin
 		return nil, err
 	}
 
+	cache.SetCache(ctx, ps.RedisClient, cacheKey, properties)
 	return properties, nil
 }
 
@@ -140,15 +157,18 @@ func (ps *PropertyService) GetPropertiesByAttributes(ctx *gin.Context) ([]models
 		filters["isVerified"] = verifiedBool
 	}
 
-	/*
+	var properties []models.Property
 
-		json:"areaSqFt" bson:"areaSqFt"`
-
-		// Amenities and Tags are pipe-separated in the CSV, so they are represented as slices of strings.
-		Amenities     []string  `json:"amenities" bson:"amenities"`
-
-		Tags          []string  `json:"tags" bson:"
-	*/
+	// try cache
+	cacheKey := generateCacheKeyFromQuery(ctx.Request.URL.Query())
+	found, err := cache.GetCache(ctx, ps.RedisClient, cacheKey, &properties)
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		log.Println("cache hit for:", cacheKey)
+		return properties, nil
+	}
 
 	propertyCollection := ps.DB.Collection("properties")
 	cursor, err := propertyCollection.Find(ctx, filters)
@@ -157,7 +177,6 @@ func (ps *PropertyService) GetPropertiesByAttributes(ctx *gin.Context) ([]models
 	}
 	defer cursor.Close(ctx)
 
-	var properties []models.Property
 	for cursor.Next(ctx) {
 		var prop models.Property
 		if err := cursor.Decode(&prop); err != nil {
@@ -170,7 +189,21 @@ func (ps *PropertyService) GetPropertiesByAttributes(ctx *gin.Context) ([]models
 	if err := cursor.Err(); err != nil {
 		return nil, err
 	}
+
+	cache.SetCache(ctx, ps.RedisClient, cacheKey, properties)
 	return properties, nil
+}
+
+func generateCacheKeyFromQuery(q url.Values) string {
+	if len(q) == 0 {
+		return "filterprop:all"
+	}
+	var parts []string
+	for k, v := range q {
+		parts = append(parts, k+"="+strings.Join(v, ","))
+	}
+	sort.Strings(parts)
+	return "filterprop:" + strings.Join(parts, "&")
 }
 
 func (ps *PropertyService) NewProperty(ctx *gin.Context) error {

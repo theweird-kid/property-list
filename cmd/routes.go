@@ -23,7 +23,7 @@ func setupRoutes(r *gin.Engine, api *handlers.API) {
 	{
 		protectedRoutes.GET("/my-props", api.GetUserProperties)
 		protectedRoutes.POST("/add-prop", api.NewProperty)
-		protectedRoutes.PATCH("/update-prop", api.UpdateProperty)
+		protectedRoutes.PUT("/update-prop", api.UpdateProperty)
 
 		protectedRoutes.GET("/fav", api.GetFavourites)
 		protectedRoutes.POST("/fav-prop", api.FavouriteProperty)
