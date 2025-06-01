@@ -11,7 +11,10 @@ func setupRoutes(r *gin.Engine, api *handlers.API) {
 
 	r.GET("/properties", api.GetProperties)
 	r.GET("/prop-search", api.GetPropertiesByAttributes)
+
+	// Query filter for email
 	r.GET("/users", api.GetUsers)
+
 	r.POST("/register", api.RegisterUser)
 	r.POST("/login", api.LoginUser)
 

@@ -1,7 +1,6 @@
 package prop_service
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -70,8 +69,6 @@ func (ps *PropertyService) GetPropertiesByUser(ctx *gin.Context, userEmail strin
 
 		properties = append(properties, prop)
 	}
-
-	fmt.Println(len(properties))
 
 	if err := cursor.Err(); err != nil {
 		return nil, err

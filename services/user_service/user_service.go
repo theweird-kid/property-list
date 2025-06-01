@@ -26,7 +26,13 @@ func NewUserService(db *mongo.Database, redis *redis.Client) *UserService {
 
 func (us *UserService) GetUsers(ctx *gin.Context) ([]models.User, error) {
 	usersCollection := us.DB.Collection("users")
-	cursor, err := usersCollection.Find(ctx, bson.M{})
+
+	filter := bson.M{}
+	if email := ctx.Query("email"); email != "" {
+		filter["email"] = bson.M{"$regex": email}
+	}
+
+	cursor, err := usersCollection.Find(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
