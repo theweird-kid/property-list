@@ -7,6 +7,9 @@ This system allows users to register, list properties, search/filter listings, m
 
 ---
 
+[**Download the API Documentation (PDF)**](./APIDocs.pdf)
+
+
 ## Features
 
 - **User Registration & Login**
@@ -63,4 +66,3 @@ This system allows users to register, list properties, search/filter listings, m
 3. **Run the server:**
    ```bash
    go run cmd/main.go
-   ```
