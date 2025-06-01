@@ -1,6 +1,6 @@
 # Property Listing System
 
-![Property Listing](PropertListing.png)
+![Property Listing](PropertyListing.png)
 
 A RESTful property listing platform built with Go, Gin, MongoDB, and Redis.
 This system allows users to register, list properties, search/filter listings, manage favorites, and recommend properties to others.
@@ -49,7 +49,7 @@ This system allows users to register, list properties, search/filter listings, m
 ## Getting Started
 
 1. **Clone the repository**
-2. **Set up MongoDB and Redis**  
+2. **Set up MongoDB and Redis**
    Create a `.env` file in the project root with the following format:
    ```env
    MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/<params>
